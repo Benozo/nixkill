@@ -14,76 +14,106 @@ const (
 	confirmNo  = "n"
 )
 
-// main is the entry point of the program. It prompts the user to enter a port number,
-// finds the process IDs (PIDs) that are using the specified port, and asks the user
-// for confirmation to kill those processes. If the user confirms, it attempts to
-// kill the processes using the specified port.
-//
-// The program performs the following steps:
-// 1. Prompts the user to enter a port number.
-// 2. Validates that the port number is not empty.
-// 3. Uses the `lsof` command to find the PIDs of processes listening on the specified port.
-// 4. If no processes are found, it prints an error message and exits.
-// 5. If processes are found, it prints the PIDs and asks the user for confirmation to kill them.
-// 6. If the user confirms, it attempts to kill each process using the `kill` command.
-// 7. Prints the result of each kill attempt (success or failure).
+// main is the entry point of the application. It prompts the user to choose between killing a process by port or PID.
+// Depending on the user's choice, it will either:
+// 1. Prompt for a port/pid number, find the processes using that port, and ask for confirmation
 func main() {
-	fmt.Print("Enter the port to kill: ")
 	reader := bufio.NewReader(os.Stdin)
-	port, err := reader.ReadString('\n')
+
+	fmt.Print("Enter 'port' to kill A port or Enter 'pid' to kill BY PID (port/pid): ")
+	killType, err := reader.ReadString('\n')
 	if err != nil {
 		fmt.Printf("Error reading input: %v\n", err)
 		return
 	}
-	port = strings.TrimSpace(port)
+	killType = strings.TrimSpace(strings.ToLower(killType))
 
-	if port == "" {
-		fmt.Println("Port cannot be empty.")
+	if killType != "port" && killType != "pid" {
+		fmt.Println("Invalid input. Please enter 'port' or 'pid'.")
 		return
 	}
 
-	// Validate port number
-	if _, err := strconv.Atoi(port); err != nil {
-		fmt.Println("Invalid port number.")
-		return
-	}
-
-	// Get the PID(s) using the given port
-	cmd := exec.Command("sh", "-c", fmt.Sprintf("lsof -t -i :%s -sTCP:LISTEN", port))
-	output, err := cmd.Output()
-	if err != nil {
-		fmt.Printf("Error executing lsof command: %v\n", err)
-		return
-	}
-	if len(output) == 0 {
-		fmt.Println("Error: No process found using port", port)
-		return
-	}
-
-	// Trim and split PIDs (Handles multiple PIDs)
-	pids := strings.Fields(strings.TrimSpace(string(output)))
-
-	fmt.Printf("Processes %v are using port %s.\n", pids, port)
-	fmt.Print("Do you want to kill them? (y/n): ")
-	confirm, err := reader.ReadString('\n')
+	fmt.Printf("Enter the %s to kill: ", killType)
+	target, err := reader.ReadString('\n')
 	if err != nil {
 		fmt.Printf("Error reading input: %v\n", err)
 		return
 	}
-	confirm = strings.TrimSpace(strings.ToLower(confirm))
+	target = strings.TrimSpace(target)
 
-	if confirm == confirmYes {
-		for _, pid := range pids {
-			fmt.Printf("Killing process %s...\n", pid)
-			killCmd := exec.Command("sh", "-c", fmt.Sprintf("sudo kill -9 %s", pid))
-			err = killCmd.Run()
-			if err != nil {
-				fmt.Printf("❌ Failed to kill process %s: %v\n", pid, err)
-			} else {
-				fmt.Printf("✅ Successfully killed process %s\n", pid)
-			}
+	if target == "" {
+		fmt.Printf("%s cannot be empty.\n", strings.Title(killType))
+		return
+	}
+
+	if killType == "port" {
+		// Validate port number
+		if _, err := strconv.Atoi(target); err != nil {
+			fmt.Println("Invalid port number.")
+			return
 		}
+
+		// Get the PID(s) using the given port
+		cmd := exec.Command("sh", "-c", fmt.Sprintf("lsof -t -i :%s -sTCP:LISTEN", target))
+		output, err := cmd.Output()
+		if err != nil {
+			fmt.Printf("Error executing lsof command: %v\n", err)
+			return
+		}
+		if len(output) == 0 {
+			fmt.Println("Error: No process found using port", target)
+			return
+		}
+
+		// Trim and split PIDs (Handles multiple PIDs)
+		pids := strings.Fields(strings.TrimSpace(string(output)))
+
+		fmt.Printf("Processes %v are using port %s.\n", pids, target)
+		fmt.Print("Do you want to kill them? (y/n): ")
+		confirm, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Printf("Error reading input: %v\n", err)
+			return
+		}
+		confirm = strings.TrimSpace(strings.ToLower(confirm))
+
+		if confirm == confirmYes {
+			for _, pid := range pids {
+				killProcess(pid)
+			}
+		} else {
+			fmt.Println("Aborted.")
+		}
+	} else if killType == "pid" {
+		// Validate PID
+		if _, err := strconv.Atoi(target); err != nil {
+			fmt.Println("Invalid PID.")
+			return
+		}
+
+		fmt.Printf("Do you want to kill process %s? (y/n): ", target)
+		confirm, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Printf("Error reading input: %v\n", err)
+			return
+		}
+		confirm = strings.TrimSpace(strings.ToLower(confirm))
+
+		if confirm == confirmYes {
+			killProcess(target)
+		} else {
+			fmt.Println("Aborted.")
+		}
+	}
+}
+
+func killProcess(pid string) {
+	fmt.Printf("Killing process %s...\n", pid)
+	killCmd := exec.Command("sh", "-c", fmt.Sprintf("sudo kill -9 %s", pid))
+	err := killCmd.Run()
+	if err != nil {
+		fmt.Printf("❌ Failed to kill process %s: %v\n", pid, err)
 	} else {
-		fmt.Println("Aborted.")
+		fmt.Printf("✅ Successfully killed process %s\n", pid)
 	}
 }

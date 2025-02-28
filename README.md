@@ -1,11 +1,9 @@
-
-
 # nixkill
 
-`nixkill` is a lightweight command-line tool that helps you quickly identify and terminate processes using a specific port on your system. This is particularly useful for developers who need to free up occupied ports without manually searching for process IDs.
+`nixkill` is a lightweight command-line tool that helps you quickly identify and terminate processes using a specific port or PID on your system. This is particularly useful for developers who need to free up occupied ports or terminate specific processes without manually searching for process IDs.
 
 ## ✨ Features
-- **Find and kill processes by port** 🛑
+- **Find and kill processes by port or PID** 🛑
 - **Interactive confirmation before termination** ⚠️
 - **Lightweight & easy to use** ⚡
 - **Works on Linux & macOS** 🐧🍏
@@ -49,26 +47,33 @@ export PATH=$PATH:$(go env GOPATH)/bin
 Run `nixkill` to free up a specific port:
 
 ```sh
-./nixkill
+ ./nixkill 
+Enter 'port' to kill A port or Enter 'pid' to kill BY PID (port/pid): port
 Enter the port to kill: 8080
-Processes [23926] are using port 8080.
+Processes [39420] are using port 8080.
 Do you want to kill them? (y/n): y
-✅ Successfully killed process 23926
+Killing process 39420...
+✅ Successfully killed process 39420
 ```
 
-Alternatively, you can specify the port directly:
+Run `nixkill` to kill a specific PID:
+
 ```sh
-./nixkill 8080
+./nixkill 
+Enter 'port' to kill A port or Enter 'pid' to kill BY PID (port/pid): pid
+Enter the pid to kill: 37806
+Do you want to kill process 37806? (y/n): y
+Killing process 37806...
+✅ Successfully killed process 37806
 ```
+
 If a process is found, it will prompt for confirmation before terminating it.
 
 ---
 
 ## 🛠️ Roadmap & Contributions
 We’re always looking to improve! Future enhancements may include:
-- Automatic detection and force-kill options (`--force`)
 - Windows support 🖥️
-- Logging and verbosity levels
 
 Contributions are welcome! Feel free to fork the repository and submit pull requests.
 
@@ -80,3 +85,4 @@ Contributions are welcome! Feel free to fork the repository and submit pull requ
 🔗 **GitHub Repository**: [github.com/Benozo/nixkill](https://github.com/Benozo/nixkill)  
 
 ---
+````
